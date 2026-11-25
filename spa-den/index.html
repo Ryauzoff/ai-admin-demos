@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ИИ-администратор салона — демо</title>
+  <meta name="description" content="Демо ИИ-администратора салона красоты: отвечает, знает цены и расписание, записывает клиентов, передаёт сложное человеку.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23a4553a'/%3E%3Cpath d='M8 10h16v11H15l-7 5z' fill='%23fffaf2'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="fonts.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <a class="brand" href="#">
+      <span class="brand__mark" id="brandMark">А</span>
+      <span class="brand__text"><span id="brandName">Аврора</span><small id="brandTagline">студия красоты</small></span>
+    </a>
+    <div class="topbar__right">
+      <span class="demo-badge">демо администратора</span>
+      <button class="ghost-btn" id="nightToggle" type="button" aria-pressed="false">День: сейчас</button>
+      <button class="ghost-btn" id="resetBtn" type="button">Сбросить</button>
+    </div>
+  </header>
+
+  <main class="layout">
+
+    <section class="hero" aria-labelledby="heroTitle">
+      <p class="eyebrow">Показ клиенту · 2 минуты</p>
+      <h1 id="heroTitle">Администратор,<br>который не спит</h1>
+      <p class="lead">Отвечает в мессенджере, знает прайс и расписание, записывает клиентов и передаёт сложное человеку. Напишите ему как обычному администратору.</p>
+
+      <ul class="features">
+        <li>
+          <span class="feature__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+          </span>
+          <span><b>24/7 без выходных</b><small>отвечает ночью и в воскресенье</small></span>
+        </li>
+        <li>
+          <span class="feature__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3.5v3M16 3.5v3M3.5 10h17"/><path d="m9 15 2 2 4-4"/></svg>
+          </span>
+          <span><b>Запись за 4 шага</b><small>услуга, мастер, время, телефон</small></span>
+        </li>
+        <li>
+          <span class="feature__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6.5h16M4 12h16M4 17.5h10"/></svg>
+          </span>
+          <span><b>Знает прайс и мастеров</b><small>меняется под ваш салон за 15 минут</small></span>
+        </li>
+        <li>
+          <span class="feature__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3.5 5 6.5v5c0 4.3 2.9 7.6 7 9 4.1-1.4 7-4.7 7-9v-5l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+          </span>
+          <span><b>Сложное — человеку</b><small>жалобы и здоровье не решает сам</small></span>
+        </li>
+      </ul>
+
+      <div class="scenarios" aria-label="Готовые сценарии для показа">
+        <p class="scenarios__title">Попробуйте сценарий</p>
+        <div class="scenarios__row">
+          <button type="button" class="scenario" data-scenario="Хочу записаться на массаж">Записаться на массаж</button>
+          <button type="button" class="scenario" data-scenario="Сколько стоит массаж?">Спросить цену</button>
+          <button type="button" class="scenario" data-scenario="Вы работаете в воскресенье?">Воскресенье</button>
+          <button type="button" class="scenario" data-scenario="Хочу отменить запись">Отменить запись</button>
+          <button type="button" class="scenario" data-scenario="Позовите живого человека">Живой человек</button>
+        </div>
+      </div>
+
+      <div class="lead-card" id="leadCard" aria-label="Заявка, которую собрал администратор">
+        <div class="lead-card__head">
+          <span class="lead-card__dot" aria-hidden="true"></span>
+          <span>Заявка для администратора</span>
+          <span class="lead-card__count" id="leadCount">0 заявок</span>
+        </div>
+        <dl class="lead-card__grid">
+          <div><dt>Услуга</dt><dd id="leadService">—</dd></div>
+          <div><dt>Мастер</dt><dd id="leadMaster">—</dd></div>
+          <div><dt>Дата</dt><dd id="leadDate">—</dd></div>
+          <div><dt>Время</dt><dd id="leadTime">—</dd></div>
+          <div><dt>Имя</dt><dd id="leadName">—</dd></div>
+          <div><dt>Телефон</dt><dd id="leadPhone">—</dd></div>
+        </dl>
+        <button type="button" class="tg-btn" id="sendTg" disabled>Отправить в Telegram</button>
+        <p class="lead-card__hint">В демо это имитация. В боевой версии заявка уходит в Telegram и CRM.</p>
+      </div>
+
+    </section>
+
+    <section class="stage" aria-label="Телефон с чатом администратора">
+      <div class="phone">
+        <div class="phone__status">
+          <span id="clock">10:24</span>
+          <span class="phone__island" aria-hidden="true"></span>
+          <span class="phone__icons" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M3 13h2v3H3zM7 10h2v6H7zM11 7h2v9h-2zM15 4h2v12h-2z"/></svg>
+            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 3c2.5 0 4.8 1 6.5 2.7l-1.4 1.4A7.2 7.2 0 0 0 10 5c-1.6 0-3.1.6-4.2 1.7L4.4 5.3A9.2 9.2 0 0 1 10 3Zm0 3.5c1.6 0 3 .6 4.1 1.7l-1.4 1.4A4.2 4.2 0 0 0 10 8.5c-.9 0-1.7.3-2.3.8L6.3 7.9c1-.9 2.3-1.4 3.7-1.4Zm0 3.5c.7 0 1.3.3 1.8.7L10 13l-1.8-2.3c.5-.4 1.1-.7 1.8-.7Z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="16" height="10" rx="2"/><path d="M21 10v4"/><rect x="5" y="9" width="11" height="6" rx="1" fill="currentColor" stroke="none"/></svg>
+          </span>
+        </div>
+
+        <div class="phone__header">
+          <div class="avatar" id="adminAvatar" aria-hidden="true">А</div>
+          <div class="phone__who">
+            <strong id="adminNameHeader">Анна</strong>
+            <span id="chatStatus">онлайн, отвечает сразу</span>
+          </div>
+          <div class="phone__dots" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <div class="chat" id="messages" role="log" aria-live="polite" aria-label="Переписка с администратором"></div>
+
+        <div class="chips" id="chips" aria-label="Быстрые ответы"></div>
+
+        <form class="composer" id="chatForm" autocomplete="off">
+          <label class="visually-hidden" for="chatInput">Сообщение администратору</label>
+          <input id="chatInput" type="text" placeholder="Напишите сообщение…" maxlength="300">
+          <button type="submit" id="sendBtn" aria-label="Отправить">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="m4 11.5 15-7-4.5 15-3-6-7.5-2Z"/></svg>
+          </button>
+        </form>
+      </div>
+      <div class="stage__caption">
+        <span class="badge-soft" id="escalateBadge" hidden>передано администратору</span>
+        <span>Интерфейс как у клиента · работает без интернета</span>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
+
+

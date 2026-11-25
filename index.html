@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Демо ИИ-администратора</title>
+<style>
+  :root { --bg: #f8ecdc; --ink: #2f2419; --muted: #7d6a55; --line: #e2cfb6; --accent: #a4553a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 48px 20px 64px; background: var(--bg); color: var(--ink);
+         font-family: Georgia, "Times New Roman", serif; }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  h1 { font-size: clamp(28px, 4vw, 44px); margin: 0 0 8px; font-weight: 600; }
+  p.lead { color: var(--muted); margin: 0 0 36px; font-size: 17px; line-height: 1.6; max-width: 60ch; }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+  .card { display: flex; flex-direction: column; gap: 4px; padding: 18px 20px; text-decoration: none;
+          color: inherit; background: #fffaf2; border: 1px solid var(--line); border-radius: 14px;
+          transition: border-color .2s, transform .2s; }
+  .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .card__name { font-size: 19px; font-weight: 600; }
+  .card__meta { color: var(--accent); font-size: 14px; }
+  .card__addr { color: var(--muted); font-size: 13px; }
+  footer { margin-top: 40px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+  @media (prefers-reduced-motion: reduce) { .card { transition: none; } .card:hover { transform: none; } }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Демо ИИ-администратора</h1>
+    <p class="lead">Администратор отвечает в мессенджере, знает прайс и расписание, записывает клиента и передаёт сложное человеку. Каждое демо собрано под конкретный салон.</p>
+    <div class="grid">
+      <a class="card" href="./ekzomassazh/">
+        <span class="card__name">Оздоровительный центр экзомассажа</span>
+        <span class="card__meta">массажный салон · Ольга</span>
+        <span class="card__addr">Пермь, Улица Николая Островского, 30</span>
+      </a>
+      <a class="card" href="./massazhnaya/">
+        <span class="card__name">Массажная</span>
+        <span class="card__meta">массажный салон · Анна</span>
+        <span class="card__addr">Пермь, Сакко и Ванцетти, 98</span>
+      </a>
+      <a class="card" href="./nezhno/">
+        <span class="card__name">Нежно</span>
+        <span class="card__meta">студия маникюра · Ирина</span>
+        <span class="card__addr">Пермь, улица Луначарского, 34</span>
+      </a>
+      <a class="card" href="./pravilo/">
+        <span class="card__name">ПравИло</span>
+        <span class="card__meta">массажный салон · Марина</span>
+        <span class="card__addr">Пермь, Улица Коминтерна, 25</span>
+      </a>
+      <a class="card" href="./schastye/">
+        <span class="card__name">Счастье</span>
+        <span class="card__meta">студия маникюра · Виктория</span>
+        <span class="card__addr">Пермь, улица Луначарского, 99</span>
+      </a>
+      <a class="card" href="./spa-den/">
+        <span class="card__name">СПА-день</span>
+        <span class="card__meta">массажный салон · Елена</span>
+        <span class="card__addr">Пермь, Улица Революции, 62</span>
+      </a>
+    </div>
+    <footer>Это демонстрация сценария на локальном движке. Настоящие сообщения никуда не уходят,
+    кнопка Telegram имитация. Боевая версия подключается к нейросети и мессенджеру.</footer>
+  </div>
+</body>
+</html>
