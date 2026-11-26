@@ -500,7 +500,7 @@
     if (/привет|здравств|добрый|доброе|хай|hello/.test(t)) {
       return botSay(`Здравствуйте! Я ${S.adminName}, администратор студии «${S.name}». Подскажу цены, свободное время и запишу вас. Что вас интересует?`, [
         { label: "Записаться", value: "хочу записаться" },
-        { label: "Цены", value: "сколько стоит маникюр" }
+        { label: "Цены", value: "какие у вас цены" }
       ]);
     }
 
@@ -576,7 +576,7 @@
     const todayNote = hasToday
       ? `Сегодня ${shortDate(today)} ещё есть окна.`
       : `На сегодня, ${shortDate(today)}, мест уже нет.`;
-    return botSay(`${todayNote} Завтра - ${shortDate(tomorrow)}, ${WEEKDAYS[tomorrow.getDay()]}. На какой день записать?`, chips);
+    return botSay(`${todayNote} Завтра ${shortDate(tomorrow)}, ${WEEKDAYS[tomorrow.getDay()]}. На какой день записать?`, chips);
   }
 
   async function askTime(day) {
@@ -628,7 +628,7 @@
     if (flow.step === "service") {
       const service = findService(text);
       if (!service) {
-        return botSay("Не нашла такую услугу. Выберите из списка или напишите название, например «маникюр».", S.services.slice(0, 5).map((s) => ({ label: s.name, value: s.name })));
+        return botSay(`Не нашла такую услугу. Выберите из списка или напишите название, например «${S.services[0].name.toLowerCase()}».`, S.services.slice(0, 5).map((s) => ({ label: s.name, value: s.name })));
       }
       flow.service = service;
       return askMaster();
@@ -890,7 +890,7 @@
       setStatus("ночная смена, студия закрыта");
       addSystem("Сейчас 23:40. Студия закрыта, но администратор на связи");
       await botSay("Да, я на связи и ночью. Могу записать вас на завтра или ответить на вопрос. Что подсказать?", [
-        { label: "Записаться на завтра", value: "хочу записаться на маникюр" },
+        { label: "Записаться на завтра", value: "хочу записаться" },
         { label: "Цены", value: "какие у вас цены" }
       ]);
     } else {
