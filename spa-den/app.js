@@ -64,6 +64,132 @@
     return many;
   };
 
+  // Склонение имени администратора: «передаю Марине», а не «передаю Марина».
+  const decl = (name, c) => {
+    const n = String(name || "").trim();
+    if (!n) return n;
+    if (/ия$/i.test(n)) return c === "dat" ? n.slice(0, -1) + "и" : n.slice(0, -1) + "ю";
+    if (/[ая]$/i.test(n)) return c === "dat" ? n.slice(0, -1) + "е" : n.slice(0, -1) + "у";
+    return n;
+  };
+
+  // Что не может быть именем клиента: команды и вопросы.
+  const NOT_NAME = /хочу|запиш|запис|отмен|перенес|сколько|цена|цен|стоит|стоим|прайс|адрес|график|работ|воскрес|суббот|человек|администратор|спасибо|привет|здравств|мастер|услуг|да|нет|окей|измен|подтвержд|позов|оплат|парков|сертификат|дет/;
+
+  function looksLikeName(raw) {
+    const s = String(raw).trim()
+      .replace(/^(меня зовут|это|я)\s+/i, "")
+      .replace(/[.,!?;:]/g, "")
+      .trim();
+    if (s.length < 2 || s.length > 40) return null;
+    if (!/^[а-яёa-z][а-яёa-z'`\- ]+$/i.test(s)) return null;
+    if (s.split(/\s+/).length > 3) return null;
+    if (NOT_NAME.test(norm(s))) return null;
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  // Мастера и их услуги берутся из базы знаний, а не из текста про маникюр.
+  function mastersLine() {
+    return S.masters.map((m) => {
+      const items = S.services
+        .filter((s) => (s.masters || []).includes(m.id))
+        .map((s) => s.name.toLowerCase());
+      const tail = items.length ? `: ${items.slice(0, 3).join(", ")}` : "";
+      return `${m.name}, ${m.role}${tail}`;
+    }).join("; ");
+  }
+
+  function servicesShort(limit = 6) {
+    return S.services.slice(0, limit).map((s) => `${s.name.toLowerCase()} (${money(s.price)})`).join(", ");
+  }
+
+  // Вопрос можно задать на любом шаге записи: бот отвечает и возвращает к делу.
+  async function sideIntent(text) {
+    const t = norm(text);
+
+    if (/человек|живой|оператор|менеджер|позов|соедин/.test(t)) {
+      state.flow = null;
+      await escalate();
+      return true;
+    }
+
+    if (/спасибо|благодар|спс|спасиб/.test(t)) {
+      await botSay("Пожалуйста! Если понадобится, я на связи.");
+      await resumeStep();
+      return true;
+    }
+
+    if (/отмен|перенес|перезапис/.test(t) && !(state.flow && state.flow.type === "cancel")) {
+      state.flow = null;
+      await startCancel();
+      return true;
+    }
+
+    if (/адрес|где вы|как добраться|как доехать|находит/.test(t)) {
+      await botSay(`Мы в ${S.city}, ${S.address}. Вход со стороны улицы, вывеска «${S.name}».`);
+      await resumeStep();
+      return true;
+    }
+
+    const asksHours = /работаете|график|во сколько|до скольки|открыт|закрыт|выходн|воскресен|суббот/.test(t);
+    // На шаге выбора дня «в воскресенье» это ответ про дату, а не вопрос про график.
+    const onDateStep = state.flow && state.flow.type === "booking" && state.flow.step === "date";
+    if (asksHours && !onDateStep) {
+      await botSay(`Работаем ${S.hours}. Если напишете после закрытия, я всё равно приму заявку и передам её администратору.`);
+      await resumeStep();
+      return true;
+    }
+
+    if (/сколько|цена|цен|стоит|стоим|почем|прайс|прейскурант/.test(t)) {
+      const service = findService(text);
+      if (service) {
+        await botSay(`${service.name} - ${money(service.price)}, ${durationText(service.duration)}.`);
+      } else {
+        await botSay(`Вот что у нас есть: ${servicesShort()}. Назову точную цену по любой услуге.`);
+      }
+      await resumeStep();
+      return true;
+    }
+
+    if (/какие услуги|что у вас|список услуг|что делаете/.test(t)) {
+      await showPriceList();
+      await resumeStep();
+      return true;
+    }
+
+    if (/^(привет|здравств|добрый день|доброе утро|добрый вечер|хай|hello)/.test(t)) {
+      await botSay("Здравствуйте! Я на связи. Продолжим с записью или подскажу что-то ещё?");
+      await resumeStep();
+      return true;
+    }
+
+    return false;
+  }
+
+  // Повторить вопрос текущего шага после ответа на вопрос клиента.
+  async function resumeStep() {
+    const f = state.flow;
+    if (!f) return;
+
+    if (f.type === "cancel") {
+      if (f.record) {
+        return botSay(`Продолжим: отменяем запись на ${humanDate(f.record.date)} в ${f.record.time}? Ответьте «да» или «нет».`, [
+          { label: "Да, отменить", value: "да" },
+          { label: "Оставить", value: "нет" }
+        ]);
+      }
+      return botSay("Продолжим: напишите имя или телефон, на который оформлена запись.");
+    }
+
+    if (f.step === "service") return askService();
+    if (f.step === "master") return askMaster();
+    if (f.step === "date") return askDate();
+    if (f.step === "time") return askTime(f.date);
+    if (f.step === "name") return botSay("Продолжим. Как вас зовут?");
+    if (f.step === "phone") return botSay("Продолжим. Оставьте номер телефона, чтобы администратор подтвердила запись.");
+    if (f.step === "confirm") return confirmBooking();
+  }
+
   // ---------- состояние ----------
 
   const state = {
@@ -360,9 +486,9 @@
     }
 
     if (/мастер|кто делает|специалист|к кому/.test(t)) {
-      return botSay("У нас три мастера: Мария - стрижки, окрашивание и укладка; Алина - маникюр и педикюр; Ольга - брови, ресницы и макияж. На какую услугу хотите записаться?", [
-        { label: "На маникюр", value: "хочу записаться на маникюр" },
-        { label: "На стрижку", value: "хочу записаться на женскую стрижку" }
+      return botSay(`У нас ${S.masters.length} ${plural(S.masters.length, "мастер", "мастера", "мастеров")}: ${mastersLine()}. На какую услугу хотите записаться?`, [
+        ...S.services.slice(0, 2).map((s) => ({ label: s.name, value: `хочу записаться на ${s.name.toLowerCase()}` })),
+        { label: "Все цены", value: "какие у вас цены" }
       ]);
     }
 
@@ -405,9 +531,9 @@
         { label: "Другие цены", value: "какие у вас цены" }
       ]);
     }
-    return botSay("Подскажите услугу: стрижка, окрашивание, маникюр, педикюр, брови, ресницы или макияж. Назову цену и свободное время.", [
-      { label: "Маникюр", value: "сколько стоит маникюр" },
-      { label: "Стрижка", value: "сколько стоит женская стрижка" }
+    return botSay(`Подскажите услугу: ${servicesShort(8)}. Назову цену и свободное время.`, [
+      ...S.services.slice(0, 2).map((s) => ({ label: s.name, value: `сколько стоит ${s.name.toLowerCase()}` })),
+      { label: "Все цены", value: "какие у вас цены" }
     ]);
   }
 
@@ -461,8 +587,10 @@
       return askDate();
     }
     const show = slots.slice(0, 6);
-    const more = slots.length > show.length ? " Есть и другие окна, назовите удобное время." : "";
-    return botSay(`${humanDate(day)} свободно: ${show.join(", ")}.${more} Какое время удобно?`, show.map((t) => ({ label: t, value: t })));
+    const tail = slots.length > show.length
+      ? ` Ещё есть ${slots.slice(6, 10).join(", ")}${slots.length > 10 ? " и другие" : ""}.`
+      : "";
+    return botSay(`${humanDate(day)}: свободно ${show.join(", ")}.${tail} На какое время записать?`, show.map((t) => ({ label: t, value: t })));
   }
 
   async function askName() {
@@ -487,6 +615,9 @@
   async function bookingStep(text) {
     const t = norm(text);
     const flow = state.flow;
+
+    // Любой вопрос по ходу записи: отвечаем и возвращаемся к шагу.
+    if (await sideIntent(text)) return;
 
     // Прервать и передать человеку можно на любом шаге.
     if (/человек|администратор|оператор|живой/.test(t)) {
@@ -553,11 +684,11 @@
     }
 
     if (flow.step === "name") {
-      const name = text.trim().replace(/^(меня зовут|это|я)\s+/i, "").replace(/[.,!]/g, "");
-      if (name.length < 2) {
-        return botSay("Напишите, пожалуйста, имя - так администратору будет проще вас встретить.");
+      const name = looksLikeName(text);
+      if (!name) {
+        return botSay("Похоже, это не имя. Напишите, как вас зовут, например «Анна». Если хотите отменить запись или узнать цену, просто скажите.");
       }
-      flow.name = name.charAt(0).toUpperCase() + name.slice(1);
+      flow.name = name;
       return askPhone();
     }
 
@@ -625,6 +756,9 @@
     const t = norm(text);
     const flow = state.flow;
 
+    // Вопрос по ходу отмены: отвечаем и возвращаемся к отмене.
+    if (await sideIntent(text)) return;
+
     if (flow.record) {
       if (/^да|отмен|конечно|верно/.test(t)) {
         const key = dateKey(flow.record.date);
@@ -634,7 +768,7 @@
         state.flow = null;
         hideLead();
         await botSay(`Отменила запись на ${humanDate(flow.record.date)} в ${flow.record.time}. Если захотите выбрать другое время, я на связи.`);
-        addSystem("Запись отменена, администратор уведомлена");
+        addSystem("Запись отменена, администратор уже знает");
         return;
       }
       if (/нет|остав|не надо|оставить/.test(t)) {
@@ -662,18 +796,22 @@
       ]);
     }
     state.flow = null;
-    return botSay(`Не нашла запись по этим данным. Передам ${S.adminName}, она проверит в журнале и вернётся с ответом.`);
+    return botSay(`По этим данным записи не нашла. Передам ${decl(S.adminName, "dat")}: она проверит в журнале и вернётся с ответом.`);
   }
 
   // ---------- передача человеку ----------
 
   async function escalate() {
     state.flow = null;
+    if (state.escalated) {
+      return botSay(`${decl(S.adminName, "dat")} уже передан ваш диалог, она ответит здесь в течение 10 минут.`);
+    }
     state.escalated = true;
     els.escalateBadge.hidden = false;
     setStatus("передано администратору");
     addSystem("Диалог передан живому администратору");
-    return botSay(`Передаю ${S.adminName}. Она уже видит наш диалог и ответит в течение 10 минут. Если удобнее, напишите напрямую в Telegram: ${S.telegram}.`, [
+    const tg = S.telegram ? ` Если удобнее, напишите напрямую в Telegram: ${S.telegram}.` : "";
+    return botSay(`Передаю ${decl(S.adminName, "dat")}. Она уже видит наш диалог и ответит в течение 10 минут.${tg}`, [
       { label: "Спасибо", value: "спасибо" }
     ]);
   }
